@@ -311,36 +311,38 @@ static float getTDS(void)
     printf("tds:%.2f\n",calTDS(voltage));
     return calTDS(voltage);
 }
-// static float calTurbidity(float voltage){
-//     float temp_data=25;
-//     float TU_calibration;
-//     float TU;
-//     float TU_value;
-//     float K_Value;
-//     TU_calibration=-0.0192*(temp_data-25)+TU;  
-//   TU_value=-865.68*TU_calibration + K_Value;
-//     return TU_value;
-// }
-// static float getTurbidity(void)
-// {
-//     float voltage;
-//     //获取电压值
-//     unsigned int ret;
-//     unsigned short data;
-//     printf("==============================turbidity==========================\r\n");
+static float calTurbidity(float voltage){
+    float temp_data=25;
+    float TU_calibration=0.0;
+    float TU=voltage;
+    float TU_value=0.0;
+    // float K_Value=3347.19;
+    float K_Value=3099.14; //the actual K
+    TU_calibration=-0.0192*(temp_data-25)+TU;  
+  TU_value=-865.68*TU_calibration + K_Value;
+    return TU_value;
+}
+static float getTurbidity(void)
+{
+    float voltage;
+    //获取电压值
+    unsigned int ret;
+    unsigned short data;
+    printf("==============================turbidity==========================\r\n");
 
-//     ret = AdcRead(WIFI_IOT_ADC_CHANNEL_3, &data, WIFI_IOT_ADC_EQU_MODEL_8, WIFI_IOT_ADC_CUR_BAIS_DEFAULT, 0xff); //adc channel,read data,average of 8 times,power set to default, timer 0xFF channel1:IO04
-//     if (ret != WIFI_IOT_SUCCESS)
-//     {
-//         printf("ADC Read Fail\n");
-//     }
+    ret = AdcRead(WIFI_IOT_ADC_CHANNEL_3, &data, WIFI_IOT_ADC_EQU_MODEL_8, WIFI_IOT_ADC_CUR_BAIS_DEFAULT, 0xff); //adc channel,read data,average of 8 times,power set to default, timer 0xFF channel1:IO04
+    if (ret != WIFI_IOT_SUCCESS)
+    {
+        printf("ADC Read Fail\n");
+    }
 
-//     voltage=data * 1.8 * 4 / 4096.0;
+    voltage=data * 1.8 * 4 / 4096.0;
 
-//     printf("vlt:%.2fV\n", voltage);
-//     printf("tds:%.2f\n",calTDS(voltage));
-//     return calTDS(voltage);
-// }
+    printf("vlt:%.2fV\n", voltage);
+    printf("tur:%.2f\n",calTurbidity(voltage));
+    return calTurbidity(voltage);
+}
+// 获取传感器数据函数
 static int task_sensor_entry(void)
 {
     app_msg_t *app_msg;
@@ -349,7 +351,7 @@ static int task_sensor_entry(void)
         app_msg = malloc(sizeof(app_msg_t));
         g_app_cb.ph=getPH();
         g_app_cb.tds=getTDS();
-        g_app_cb.turbidity=0;
+        g_app_cb.turbidity=getTurbidity();
         g_app_cb.temp=0;
         printf("SENSOR:ph:%.2f tds:%.2fppm tur:%.2f temp:%.2f\r\n", g_app_cb.ph,g_app_cb.tds,g_app_cb.turbidity,g_app_cb.temp);
         if (NULL != app_msg)
