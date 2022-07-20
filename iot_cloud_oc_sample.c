@@ -319,7 +319,10 @@ static float calTurbidity(float voltage){
     // float K_Value=3347.19;
     float K_Value=3099.14; //the actual K
     TU_calibration=-0.0192*(temp_data-25)+TU;  
-  TU_value=-865.68*TU_calibration + K_Value;
+    TU_value=-865.68*TU_calibration + K_Value;
+    if(TU_value<0){
+        TU_value=0;
+    }
     return TU_value;
 }
 static float getTurbidity(void)
