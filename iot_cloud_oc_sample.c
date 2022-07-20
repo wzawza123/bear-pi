@@ -20,6 +20,7 @@
 #include "ohos_init.h"
 #include "cmsis_os2.h"
 
+#include "wifiiot_gpio.h"
 #include "wifiiot_gpio_ex.h"
 #include "wifiiot_errno.h"
 #include "wifiiot_adc.h"
@@ -148,6 +149,7 @@ void oc_cmd_rsp_cb(uint8_t *recv_data, size_t recv_size, uint8_t **resp_data, si
 #include <cJSON.h>
 static void deal_cmd_msg(cmd_t *cmd)
 {
+    printf("processing cmd!\r\n");
     cJSON *obj_root;
     cJSON *obj_cmdname;
     cJSON *obj_paras;
@@ -178,23 +180,29 @@ static void deal_cmd_msg(cmd_t *cmd)
         {
             goto EXIT_OBJPARA;
         }
+        //for command test
+        //设置GPIO_2为输出模式
+        GpioSetDir(WIFI_IOT_GPIO_IDX_7, WIFI_IOT_GPIO_DIR_OUT);
         ///< operate the LED here
         if (0 == strcmp(cJSON_GetStringValue(obj_para), "ON"))
         {
             g_app_cb.led = 1;
-            Light_StatusSet(ON);
-            printf("Light On!");
+            // Light_StatusSet(ON);
+            GpioSetOutputVal(WIFI_IOT_GPIO_IDX_7, 1);
+            printf("Light On!\r\n");
         }
         else
         {
             g_app_cb.led = 0;
-            Light_StatusSet(OFF);
-            printf("Light Off!");
+            // Light_StatusSet(OFF);
+            GpioSetOutputVal(WIFI_IOT_GPIO_IDX_7, 0);
+            printf("Light Off!\r\n");
         }
         cmdret = 0;
     }
     else if (0 == strcmp(cJSON_GetStringValue(obj_cmdname), "Agriculture_Control_Motor"))
     {
+        printf("acm recognized\r\n");
         obj_paras = cJSON_GetObjectItem(obj_root, "Paras");
         if (NULL == obj_paras)
         {
@@ -208,6 +216,7 @@ static void deal_cmd_msg(cmd_t *cmd)
         ///< operate the Motor here
         if (0 == strcmp(cJSON_GetStringValue(obj_para), "ON"))
         {
+            printf("set status\r\n");
             g_app_cb.motor = 1;
             Motor_StatusSet(ON);
             printf("Motor On!");
@@ -217,6 +226,31 @@ static void deal_cmd_msg(cmd_t *cmd)
             g_app_cb.motor = 0;
             Motor_StatusSet(OFF);
             printf("Motor Off!");
+        }
+        cmdret = 0;
+    }else if (0 == strcmp(cJSON_GetStringValue(obj_cmdname), "SET_CAM"))
+    {
+        printf("acm recognized\r\n");
+        obj_paras = cJSON_GetObjectItem(obj_root, "Paras");
+        if (NULL == obj_paras)
+        {
+            goto EXIT_OBJPARAS;
+        }
+        obj_para = cJSON_GetObjectItem(obj_paras, "IO");
+        if (NULL == obj_para)
+        {
+            goto EXIT_OBJPARA;
+        }
+        ///< operate the Motor here
+        if (0 == strcmp(cJSON_GetStringValue(obj_para), "HIGH"))
+        {
+            GpioSetOutputVal(WIFI_IOT_GPIO_IDX_8, 1);
+            printf("camera pin HIGH\r\n");
+        }
+        else
+        {
+            GpioSetOutputVal(WIFI_IOT_GPIO_IDX_8, 0);
+            printf("camera pin LOW\r\n");
         }
         cmdret = 0;
     }
@@ -244,6 +278,11 @@ static int task_main_entry(void)
     device_info_init(CLIENT_ID, USERNAME, PASSWORD);
     oc_mqtt_init();
     oc_set_cmd_rsp_cb(oc_cmd_rsp_cb); //set the callback function
+
+
+    IoSetFunc(WIFI_IOT_IO_NAME_GPIO_8, WIFI_IOT_IO_FUNC_GPIO_7_GPIO);
+    GpioSetDir(WIFI_IOT_IO_NAME_GPIO_8,WIFI_IOT_GPIO_DIR_OUT);
+    GpioSetOutputVal(WIFI_IOT_GPIO_IDX_8, 1);
 
     while (1)
     {
